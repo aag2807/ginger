@@ -1,6 +1,6 @@
 {
   "name": "ginger",
-  "main": "index.js",
+  "main": "dist/ginger.js",
   "version": "0.0.1",
   "private": true,
   "description": "Code for the book \"Build a frontend framework from scratch\".",
@@ -9,6 +9,9 @@
   },
   "workspaces": [
     "packages/runtime"
+  ],
+  "files": [
+    "dist/ginger.js"
   ],
   "keywords": [],
   "author": "aagn2807@gmail.com",

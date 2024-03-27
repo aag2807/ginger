@@ -1,0 +1,25 @@
+{
+  "name": "packages",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "prepack": "npm run build",
+    "build": "rollup -c",
+    "lint": "eslint src",
+    "lint:fix": "eslint src --fix",
+    "test": "vitest",
+    "test:run": "vitest run"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "eslint": "^8.57.0",
+    "jsdom": "^24.0.0",
+    "rollup": "^4.13.1",
+    "rollup-plugin-cleanup": "^3.2.1",
+    "rollup-plugin-filesize": "^10.0.0",
+    "vitest": "^1.4.0"
+  }
+}
