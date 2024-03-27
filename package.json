@@ -1,0 +1,16 @@
+{
+  "name": "ginger",
+  "main": "index.js",
+  "version": "0.0.1",
+  "private": true,
+  "description": "Code for the book \"Build a frontend framework from scratch\".",
+  "scripts": {
+    "serve:examples": "npx http-server . -o ./examples/"
+  },
+  "workspaces": [
+    "packages/runtime"
+  ],
+  "keywords": [],
+  "author": "aagn2807@gmail.com",
+  "license": "MIT"
+}
