@@ -4,12 +4,12 @@ import {createApp} from "./app";
 createApp({
     state: 0,
     reducers: {
-        add: (state, amount) => state + amount
+        add: (state, amount) => state + amount,
     },
-    view: (state, emit) => {
-        return h('button',
-            {on: {click: () => emit('add', 1)}},
-            [hString('Clicked ' + state + ' times')]
-        )
-    }
-}).mount(document.body);
+    view: (state, emit) =>
+        h(
+            'button',
+            { on: { click: () => emit('add', 1) } },
+            [hString(state)]
+        ),
+}).mount(document.body)

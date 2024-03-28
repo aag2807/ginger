@@ -1,49 +1,50 @@
-import {destroyDOM} from './destroy-dom'
-import {mountDOM} from './mount-dom'
-import {Dispatcher} from "./dispatcher";
+import { destroyDOM } from './destroy-dom'
+import { Dispatcher } from './dispatcher'
+import { mountDOM } from './mount-dom'
 
-export function createApp({state, view}, reducers = {}) {
-    let parentEl = null;
-    let vdom = null;
+export function createApp({ state, view, reducers = {} }) {
+    let parentEl = null
+    let vdom = null
 
-    const dispatcher = new Dispatcher();
+    const dispatcher = new Dispatcher()
     const subscriptions = [dispatcher.afterEveryCommand(renderApp)]
 
     function emit(eventName, payload) {
-        dispatcher.dispatch(eventName, payload);
+        dispatcher.dispatch(eventName, payload)
     }
 
     for (const actionName in reducers) {
-        const reducer = reducers[actionName];
+        const reducer = reducers[actionName]
 
         const subs = dispatcher.subscribe(actionName, (payload) => {
-            state = reducer(state, payload);
-        });
-
-        subscriptions.push(subs);
+            state = reducer(state, payload)
+        })
+        subscriptions.push(subs)
     }
 
     function renderApp() {
         if (vdom) {
-            destroyDOM(vdom);
+            destroyDOM(vdom)
         }
 
-        vdom = view(state, emit);
-        mountDOM(vdom, parentEl);
+        vdom = view(state, emit)
+        mountDOM(vdom, parentEl)
     }
 
     return {
-        mount(_parentElement) {
-            parentEl = _parentElement;
-            renderApp();
-        },
-        update() {
-            renderApp();
+        mount(_parentEl) {
+            parentEl = _parentEl
+            renderApp()
+
+            return this
         },
         unmount() {
-            destroyDOM(vdom);
-            vdom = null;
-            subscriptions.forEach(unsub => unsub());
-        }
+            destroyDOM(vdom)
+            vdom = null
+            subscriptions.forEach((unsubscribe) => unsubscribe())
+        },
+        emit(eventName, payload) {
+            emit(eventName, payload)
+        },
     }
 }

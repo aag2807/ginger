@@ -79,6 +79,40 @@ function destroyDOM(vNode) {
     delete vNode.el;
 }
 
+class Dispatcher {
+    #subs = new Map()
+    #afterHandlers = []
+    subscribe(commandName, handler) {
+        if (!this.#subs.has(commandName)) {
+            this.#subs.set(commandName, []);
+        }
+        const handlers = this.#subs.get(commandName);
+        if (handlers.includes(handler)) {
+            return () => {}
+        }
+        handlers.push(handler);
+        return () => {
+            const idx = handlers.indexOf(handler);
+            handlers.splice(idx, 1);
+        }
+    }
+    afterEveryCommand(handler) {
+        this.#afterHandlers.push(handler);
+        return () => {
+            const idx = this.#afterHandlers.indexOf(handler);
+            this.#afterHandlers.splice(idx, 1);
+        }
+    }
+    dispatch(commandName, payload) {
+        if (this.#subs.has(commandName)) {
+            this.#subs.get(commandName).forEach((handler) => handler(payload));
+        } else {
+            console.warn(`No handlers for command: ${commandName}`);
+        }
+        this.#afterHandlers.forEach((handler) => handler());
+    }
+}
+
 const addEventListener = (eventName, handler, el) => {
     el.addEventListener(eventName, handler);
     return handler;
@@ -171,42 +205,7 @@ const createFragmentNodes = (vdom, parentEl) => {
     children.forEach(child => mountDOM(child, parentEl));
 };
 
-class Dispatcher {
-    #subs = new Map();
-    #afterHandlers = [];
-    subscribe(commandName, handler) {
-        if (!this.#subs.has(commandName)) {
-            this.#subs.set(commandName, []);
-        }
-        const handlers = this.#subs.get(commandName);
-        if (handlers.includes(handler)) {
-            return () => {
-            };
-        }
-        handlers.push(handler);
-        return () => {
-            const indx = handlers.indexOf(handler);
-            handlers.splice(indx, 1);
-        }
-    }
-    afterEveryCommand(handler) {
-        this.#afterHandlers.push(handler);
-        return () => {
-            const indx = this.#afterHandlers.indexOf(handler);
-            this.#afterHandlers.splice(indx, 1);
-        }
-    }
-    dispatch(commandName, payload) {
-        if (this.#subs.has(commandName)) {
-            this.#subs.get(commandName).forEach(handler => handler(payload));
-        } else {
-            console.warn(`No handlers for command: ${commandName}`);
-        }
-        this.#afterHandlers.forEach(handler => handler(commandName, payload));
-    }
-}
-
-function createApp({state, view}, reducers = {}) {
+function createApp({ state, view, reducers = {} }) {
     let parentEl = null;
     let vdom = null;
     const dispatcher = new Dispatcher();
@@ -229,30 +228,31 @@ function createApp({state, view}, reducers = {}) {
         mountDOM(vdom, parentEl);
     }
     return {
-        mount(_parentElement) {
-            parentEl = _parentElement;
+        mount(_parentEl) {
+            parentEl = _parentEl;
             renderApp();
-        },
-        update() {
-            renderApp();
+            return this
         },
         unmount() {
             destroyDOM(vdom);
             vdom = null;
-            subscriptions.forEach(unsub => unsub());
-        }
+            subscriptions.forEach((unsubscribe) => unsubscribe());
+        },
+        emit(eventName, payload) {
+            emit(eventName, payload);
+        },
     }
 }
 
 createApp({
     state: 0,
     reducers: {
-        add: (state, amount) => state + amount
+        add: (state, amount) => state + amount,
     },
-    view: (state, emit) => {
-        return h('button',
-            {on: {click: () => emit('add', 1)}},
-            [hString('Clicked ' + state + ' times')]
-        )
-    }
+    view: (state, emit) =>
+        h(
+            'button',
+            { on: { click: () => emit('add', 1) } },
+            [hString(state)]
+        ),
 }).mount(document.body);

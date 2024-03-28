@@ -1,42 +1,48 @@
+/**
+ * Dispatcher that registers handler functions to respond to specific
+ * commands, identified by a unique name.
+ *
+ * The dispatcher also allows registering handler functions that run after
+ * a command is handled.
+ */
 export class Dispatcher {
-    #subs = new Map();
-    #afterHandlers = [];
+    #subs = new Map()
+    #afterHandlers = []
 
     subscribe(commandName, handler) {
         if (!this.#subs.has(commandName)) {
-            this.#subs.set(commandName, []);
+            this.#subs.set(commandName, [])
         }
 
-        const handlers = this.#subs.get(commandName);
+        const handlers = this.#subs.get(commandName)
         if (handlers.includes(handler)) {
-            return () => {
-            };
+            return () => {}
         }
 
-        handlers.push(handler);
+        handlers.push(handler)
 
         return () => {
-            const indx = handlers.indexOf(handler);
-            handlers.splice(indx, 1);
+            const idx = handlers.indexOf(handler)
+            handlers.splice(idx, 1)
         }
     }
 
     afterEveryCommand(handler) {
-        this.#afterHandlers.push(handler);
+        this.#afterHandlers.push(handler)
 
         return () => {
-            const indx = this.#afterHandlers.indexOf(handler);
-            this.#afterHandlers.splice(indx, 1);
+            const idx = this.#afterHandlers.indexOf(handler)
+            this.#afterHandlers.splice(idx, 1)
         }
     }
 
     dispatch(commandName, payload) {
         if (this.#subs.has(commandName)) {
-            this.#subs.get(commandName).forEach(handler => handler(payload));
+            this.#subs.get(commandName).forEach((handler) => handler(payload))
         } else {
-            console.warn(`No handlers for command: ${commandName}`);
+            console.warn(`No handlers for command: ${commandName}`)
         }
 
-        this.#afterHandlers.forEach(handler => handler(commandName, payload));
+        this.#afterHandlers.forEach((handler) => handler())
     }
 }
