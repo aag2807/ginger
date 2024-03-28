@@ -23,5 +23,8 @@
     "rollup-plugin-cleanup": "^3.2.1",
     "rollup-plugin-filesize": "^10.0.0",
     "vitest": "^1.4.0"
+  },
+  "dependencies": {
+    "immer": "^10.0.4"
   }
 }
