@@ -1,25 +1,15 @@
-import {h, hString, hFragment} from "./h";
-import {mountDOM} from "./mount-dom";
+import {h, hString} from "./h";
+import {createApp} from "./app";
 
-
-/**
- *
- * @param {{level: 'info'| 'warning' | 'error', message:string}} obj
- * @constructor
- */
-const MessageComponent = ( {level, message }) =>
-{
-    return h('div', {class: `message message--${level}`}, [
-        h('p', {}, [message])
-    ])
-}
-
-const vdom = h( 'div', {}, [
-    hString('Hello World!'),
-    hFragment([
-        h('p', {class: 'paragraph'}, ['This is a paragraph']),
-        h('p', {class: 'paragraph'}, ['This is another paragraph']),
-    ]),
-])
-
-mountDOM(vdom, document.body)
+createApp({
+    state: 0,
+    reducers: {
+        add: (state, amount) => state + amount
+    },
+    view: (state, emit) => {
+        return h('button',
+            {on: {click: () => emit('add', 1)}},
+            [hString('Clicked ' + state + ' times')]
+        )
+    }
+}).mount(document.body);

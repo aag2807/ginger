@@ -39,11 +39,44 @@ function hString(str) {
         value: str
     };
 }
-function hFragment(vNodes) {
-    return {
-        type: DOMTypes.FRAGMENT,
-        children: mapTextNodes(withoutNulls(vNodes)),
+
+const removeTextNode = (vNode) => {
+    const {el} = vNode;
+    el.remove();
+};
+const removeEventListeners = (listeners, el) => {
+    Object.entries(listeners).forEach(([eventName, handler]) => {
+        el.removeEventListener(eventName, handler);
+    });
+};
+const removeElementNode = (vNode) => {
+    const {el, children, listeners} = vNode;
+    el.remove();
+    children.forEach(child => destroyDOM(child));
+    if (listeners) {
+        removeEventListeners(listeners, el);
+        delete vNode.listeners;
     }
+};
+const removeFragmentNodes = (vNode) => {
+    vNode.children.forEach(child => destroyDOM(child));
+};
+function destroyDOM(vNode) {
+    const {type} = vNode;
+    switch (type) {
+        case DOMTypes.TEXT:
+            removeTextNode(vNode);
+            break;
+        case DOMTypes.ELEMENT:
+            removeElementNode(vNode);
+            break;
+        case DOMTypes.FRAGMENT:
+            removeFragmentNodes(vNode);
+            break;
+        default:
+            throw new Error(`Unrecognized vNode type: ${type}`);
+    }
+    delete vNode.el;
 }
 
 const addEventListener = (eventName, handler, el) => {
@@ -75,7 +108,7 @@ const removeAttribute = (el, name) => {
     el.removeAttribute(name);
 };
 const setAttribute = (el, name, value) => {
-    if( value == null ) {
+    if (value == null) {
         removeAttribute(el, name);
     } else if (name.startsWith('data-')) {
         el.setAttribute(name, value);
@@ -138,11 +171,88 @@ const createFragmentNodes = (vdom, parentEl) => {
     children.forEach(child => mountDOM(child, parentEl));
 };
 
-const vdom = h( 'div', {}, [
-    hString('Hello World!'),
-    hFragment([
-        h('p', {class: 'paragraph'}, ['This is a paragraph']),
-        h('p', {class: 'paragraph'}, ['This is another paragraph']),
-    ]),
-]);
-mountDOM(vdom, document.body);
+class Dispatcher {
+    #subs = new Map();
+    #afterHandlers = [];
+    subscribe(commandName, handler) {
+        if (!this.#subs.has(commandName)) {
+            this.#subs.set(commandName, []);
+        }
+        const handlers = this.#subs.get(commandName);
+        if (handlers.includes(handler)) {
+            return () => {
+            };
+        }
+        handlers.push(handler);
+        return () => {
+            const indx = handlers.indexOf(handler);
+            handlers.splice(indx, 1);
+        }
+    }
+    afterEveryCommand(handler) {
+        this.#afterHandlers.push(handler);
+        return () => {
+            const indx = this.#afterHandlers.indexOf(handler);
+            this.#afterHandlers.splice(indx, 1);
+        }
+    }
+    dispatch(commandName, payload) {
+        if (this.#subs.has(commandName)) {
+            this.#subs.get(commandName).forEach(handler => handler(payload));
+        } else {
+            console.warn(`No handlers for command: ${commandName}`);
+        }
+        this.#afterHandlers.forEach(handler => handler(commandName, payload));
+    }
+}
+
+function createApp({state, view}, reducers = {}) {
+    let parentEl = null;
+    let vdom = null;
+    const dispatcher = new Dispatcher();
+    const subscriptions = [dispatcher.afterEveryCommand(renderApp)];
+    function emit(eventName, payload) {
+        dispatcher.dispatch(eventName, payload);
+    }
+    for (const actionName in reducers) {
+        const reducer = reducers[actionName];
+        const subs = dispatcher.subscribe(actionName, (payload) => {
+            state = reducer(state, payload);
+        });
+        subscriptions.push(subs);
+    }
+    function renderApp() {
+        if (vdom) {
+            destroyDOM(vdom);
+        }
+        vdom = view(state, emit);
+        mountDOM(vdom, parentEl);
+    }
+    return {
+        mount(_parentElement) {
+            parentEl = _parentElement;
+            renderApp();
+        },
+        update() {
+            renderApp();
+        },
+        unmount() {
+            destroyDOM(vdom);
+            vdom = null;
+            subscriptions.forEach(unsub => unsub());
+        }
+    }
+}
+
+createApp({
+    state: 0,
+    reducers: {
+        add: (state, amount) => state + amount
+    },
+    view: (state, emit) => {
+        return h('button',
+            {on: {click: () => emit('add', 1)}},
+            [hString('Clicked ' + state + ' times')]
+        )
+    }
+}).mount(document.body);
