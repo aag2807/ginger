@@ -14,8 +14,12 @@ const MessageComponent = ( {level, message }) =>
     ])
 }
 
+const vdom = h( 'div', {}, [
+    hString('Hello World!'),
+    hFragment([
+        h('p', {class: 'paragraph'}, ['This is a paragraph']),
+        h('p', {class: 'paragraph'}, ['This is another paragraph']),
+    ]),
+])
 
-const msg = MessageComponent({level: 'error', message: 'This is an info message'});
-
-
-log
+mountDOM(vdom, document.body)

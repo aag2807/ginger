@@ -1,5 +1,6 @@
 import {DOMTypes} from './h'
 import {addEventListeners} from "./events";
+import {setAttributes} from "./attributes";
 
 /**
  * @param vNode
@@ -48,7 +49,7 @@ export const createElementNode = (vdom, parentEl) => {
     const {tag, props, children} = vdom
 
     const element = document.createElement(tag);
-    // add props (element, props, vdom)
+    addProps(element, props, vdom)
     vdom.el = element;
 
     children.forEach(child => mountDOM(child, element));

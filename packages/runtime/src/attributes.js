@@ -18,6 +18,20 @@ export const removeStyle = (el, prop) => {
     el.style[prop] = null;
 }
 
+export const removeAttribute = (el, name) => {
+    el[name] = null;
+    el.removeAttribute(name);
+}
+
+export const setAttribute = (el, name, value) => {
+    if (value == null) {
+        removeAttribute(el, name);
+    } else if (name.startsWith('data-')) {
+        el.setAttribute(name, value);
+    } else {
+        el[name] = value;
+    }
+}
 
 export const setAttributes = (el, attrs) => {
     const {class: className, style, ...otherAttrs} = attrs;
@@ -33,6 +47,6 @@ export const setAttributes = (el, attrs) => {
     }
 
     for (const [name, value] of Object.entries(otherAttrs)) {
-        el.setAttribute(name, value);
+        setAttribute(name, value);
     }
 }

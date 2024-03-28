@@ -3,7 +3,7 @@ export const addEventListener = (eventName, handler, el) => {
     return handler;
 }
 
-export const addEventListeners = (events, el) => {
+export const addEventListeners = (listeners = {}, el) => {
     const addedListeners = {}
 
     Object.entries(listeners).forEach(([eventName, handler]) => {
