@@ -39,6 +39,12 @@ function hString(str) {
         value: str
     };
 }
+function hFragment(vNodes) {
+    return {
+        type: DOMTypes.FRAGMENT,
+        children: mapTextNodes(withoutNulls(vNodes)),
+    }
+}
 
 const removeTextNode = (vNode) => {
     const {el} = vNode;
@@ -125,33 +131,9 @@ const addEventListeners = (listeners = {}, el) => {
     return addedListeners
 };
 
-const setClass = (el, className) => {
-    el.className = '';
-    if (typeof className == 'string') {
-        el.className = className;
-    }
-    if (Array.isArray(className)) {
-        el.classList.add(...className);
-    }
-};
-const setStyle = (el, prop, value) => {
-    el.style[prop] = value;
-};
-const removeAttribute = (el, name) => {
-    el[name] = null;
-    el.removeAttribute(name);
-};
-const setAttribute = (el, name, value) => {
-    if (value == null) {
-        removeAttribute(el, name);
-    } else if (name.startsWith('data-')) {
-        el.setAttribute(name, value);
-    } else {
-        el[name] = value;
-    }
-};
-const setAttributes = (el, attrs) => {
-    const {class: className, style, ...otherAttrs} = attrs;
+function setAttributes(el, attrs) {
+    const { class: className, style, ...otherAttrs } = attrs;
+    delete otherAttrs.key;
     if (className) {
         setClass(el, className);
     }
@@ -161,9 +143,38 @@ const setAttributes = (el, attrs) => {
         });
     }
     for (const [name, value] of Object.entries(otherAttrs)) {
-        setAttribute(name, value);
+        setAttribute(el, name, value);
     }
-};
+}
+function setAttribute(el, name, value) {
+    if (value == null) {
+        removeAttribute(el, name);
+    } else if (name.startsWith('data-')) {
+        el.setAttribute(name, value);
+    } else {
+        el[name] = value;
+    }
+}
+function removeAttribute(el, name) {
+    try {
+        el[name] = null;
+    } catch {
+        console.warn(`Failed to set "${name}" to null on ${el.tagName}`);
+    }
+    el.removeAttribute(name);
+}
+function setStyle(el, name, value) {
+    el.style[name] = value;
+}
+function setClass(el, className) {
+    el.className = '';
+    if (typeof className === 'string') {
+        el.className = className;
+    }
+    if (Array.isArray(className)) {
+        el.classList.add(...className);
+    }
+}
 
 function mountDOM(vNode, parent) {
     switch (vNode.type) {
@@ -244,15 +255,4 @@ function createApp({ state, view, reducers = {} }) {
     }
 }
 
-createApp({
-    state: 0,
-    reducers: {
-        add: (state, amount) => state + amount,
-    },
-    view: (state, emit) =>
-        h(
-            'button',
-            { on: { click: () => emit('add', 1) } },
-            [hString(state)]
-        ),
-}).mount(document.body);
+export { createApp, h, hFragment, hString };
