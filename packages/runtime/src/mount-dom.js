@@ -28,18 +28,18 @@ export function mountDOM(vNode, parent, index = null) {
  * @param {HTMLElement} parentEl
  * @param {null|number} index
  */
-export const createTextNode = (vdom, parentEl, index) => {
-    const {value} = vdom;
+function createTextNode(vdom, parentEl, index) {
+    const {value} = vdom
 
-    const textNode = document.createTextNode(value);
-    vdom.el = textNode;
+    const textNode = document.createTextNode(value)
+    vdom.el = textNode
 
-    insert(textNode, parentEl, index);
+    insert(textNode, parentEl, index)
 }
 
-const addProps = (el, props, vdom) => {
+function addProps(el, props, vdom) {
     const {on: events, ...attrs} = props;
-    vdom.listeners = addEventListeners(events, el)
+    vdom.listeners = addEventListeners(events, el);
     setAttributes(el, attrs);
 }
 
@@ -48,15 +48,15 @@ const addProps = (el, props, vdom) => {
  * @param {HTMLElement} parentEl
  * @param {null|number} index
  */
-export const createElementNode = (vdom, parentEl, index) => {
+function createElementNode(vdom, parentEl, index) {
     const {tag, props, children} = vdom
 
-    const element = document.createElement(tag);
+    const element = document.createElement(tag)
     addProps(element, props, vdom)
-    vdom.el = element;
+    vdom.el = element
 
-    children.forEach(child => mountDOM(child, element));
-    insert(element, parentEl, index);
+    children.forEach((child) => mountDOM(child, element))
+    insert(element, parentEl, index)
 }
 
 
@@ -64,30 +64,42 @@ export const createElementNode = (vdom, parentEl, index) => {
  * @param vdom
  * @param {HTMLElement} parentEl
  */
-export const createFragmentNodes = (vdom, parentEl, index) => {
-    const {children} = vdom;
-    vdom.el = parentEl;
+function createFragmentNodes(vdom, parentEl, index) {
+    const {children} = vdom
+    vdom.el = parentEl
 
-    children.forEach((child, i) =>
-        mountDOM(child, parentEl, index ? index + i : null)
-    );
+    for (const child of children) {
+        mountDOM(child, parentEl, index)
+
+        if (index == null) {
+            continue
+        }
+
+        switch (child.type) {
+            case DOMTypes.FRAGMENT:
+                index += child.children.length
+                break
+            default:
+                index++
+        }
+    }
 }
 
-export function insert(el, parentEl, index) {
+function insert(el, parentEl, index) {
+    if (index == null) {
+        parentEl.append(el)
+        return
+    }
+
     if (index < 0) {
-        throw new Error('Index is less than 0')
+        throw new Error(`Index must be a positive integer, got ${index}`)
     }
 
-    if (!!index) {
-        parentEl.append(el);
-        return;
-    }
-
-    const children = parentEl.children;
+    const children = parentEl.childNodes
 
     if (index >= children.length) {
-        parentEl.append(el);
+        parentEl.append(el)
     } else {
-        parentEl.insertBefore(el, children[index]);
+        parentEl.insertBefore(el, children[index])
     }
 }

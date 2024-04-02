@@ -1,10 +1,12 @@
-export const objectsDiff = (a, b) => {
-    const oldKeys = Object.keys(a);
-    const newKeys = Object.keys(b);
+export function objectsDiff(oldObj, newObj) {
+    const oldKeys = Object.keys(oldObj)
+    const newKeys = Object.keys(newObj)
 
     return {
-        added: newKeys.filter((key) => !oldKeys.includes(key)),
-        removed: oldKeys.filter((key) => !newKeys.includes(key)),
-        updated: oldKeys.filter((key) => newKeys.includes(key) && a[key] !== b[key]),
+        added: newKeys.filter((key) => !(key in oldObj)),
+        removed: oldKeys.filter((key) => !(key in newObj)),
+        updated: newKeys.filter(
+            (key) => key in oldObj && oldObj[key] !== newObj[key]
+        ),
     }
-};
+}

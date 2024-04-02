@@ -25,8 +25,8 @@ export function createApp({state, view, reducers = {}}) {
     }
 
     function renderApp() {
-        const newVDOM = view(state, emit);
-        vdom = patchDOM(vdom, newVDOM, parentEl);
+        const newVdom = view(state, emit);
+        vdom = patchDOM(vdom, newVdom, parentEl);
     }
 
     return {

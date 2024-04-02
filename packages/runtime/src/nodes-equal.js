@@ -1,15 +1,21 @@
 import {DOMTypes} from "./h";
 
-export function areNodesEqual(nodeA, nodeB) {
-    if (nodeA.type !== nodeB.type) {
-        return false;
+export function areNodesEqual(nodeOne, nodeTwo) {
+    if (nodeOne.type !== nodeTwo.type) {
+        return false
     }
 
-    if (nodeA.type === DOMTypes.ELEMENT) {
-        const {tag: tagA} = nodeA;
-        const {tag: tagB} = nodeB;
+    if (nodeOne.type === DOMTypes.ELEMENT) {
+        const {
+            tag: tagOne,
+            props: {key: keyOne},
+        } = nodeOne
+        const {
+            tag: tagTwo,
+            props: {key: keyTwo},
+        } = nodeTwo
 
-        return tagA === tagB;
+        return tagOne === tagTwo && keyOne === keyTwo
     }
 
     return true;

@@ -14,7 +14,9 @@ class H {
     }
 }
 
-const withoutNulls = (collection) => collection.filter((item) => item !== null);
+function withoutNulls(arr) {
+    return arr.filter((item) => item != null)
+}
 const mapTextNodes = (children) => {
     return children.map((child) => {
         if (typeof child === 'string') {
@@ -23,31 +25,77 @@ const mapTextNodes = (children) => {
         return child;
     });
 };
+function arraysDiff(oldArray, newArray) {
+    return {
+        added: newArray.filter((newItem) => !oldArray.includes(newItem)),
+        removed: oldArray.filter((oldItem) => !newArray.includes(oldItem)),
+    }
+}
 class ArrayDiffOperators {
     static add = 'add';
     static remove = 'remove';
     static move = 'move';
     static noop = 'noop';
 }
+function arraysDiffSequence(
+    oldArray,
+    newArray,
+    equalsFn = (a, b) => a === b
+) {
+    const sequence = [];
+    const array = new ArrayWithOriginalIndices(oldArray, equalsFn);
+    for (let index = 0; index < newArray.length; index++) {
+        if (array.isRemoval(index, newArray)) {
+            sequence.push(array.removeItem(index));
+            index--;
+            continue
+        }
+        if (array.isNoop(index, newArray)) {
+            sequence.push(array.noopItem(index));
+            continue
+        }
+        const item = newArray[index];
+        if (array.isAddition(item, index)) {
+            sequence.push(array.addItem(item, index));
+            continue
+        }
+        sequence.push(array.moveItem(item, index));
+    }
+    sequence.push(...array.removeItemsAfter(newArray.length));
+    return sequence
+}
 class ArrayWithOriginalIndices {
-    #array = [];
-    #originalIndices = [];
-    #equalsFn;
+    #array = []
+    #originalIndices = []
+    #equalsFn
     constructor(array, equalsFn) {
-        this.#array = array;
+        this.#array = [...array];
         this.#originalIndices = array.map((_, i) => i);
         this.#equalsFn = equalsFn;
     }
     get length() {
-        return this.#array.length;
+        return this.#array.length
+    }
+    originalIndexAt(index) {
+        return this.#originalIndices[index]
+    }
+    findIndexFrom(item, fromIndex) {
+        for (let i = fromIndex; i < this.length; i++) {
+            if (this.#equalsFn(item, this.#array[i])) {
+                return i
+            }
+        }
+        return -1
     }
     isRemoval(index, newArray) {
-        if (index > this.length) {
-            return false;
+        if (index >= this.length) {
+            return false
         }
         const item = this.#array[index];
-        const indexInNewArray = newArray.findIndex((newItem) => this.#equalsFn(item, newItem));
-        return indexInNewArray === -1;
+        const indexInNewArray = newArray.findIndex((newItem) =>
+            this.#equalsFn(item, newItem)
+        );
+        return indexInNewArray === -1
     }
     removeItem(index) {
         const operation = {
@@ -57,37 +105,26 @@ class ArrayWithOriginalIndices {
         };
         this.#array.splice(index, 1);
         this.#originalIndices.splice(index, 1);
-        return operation;
+        return operation
     }
     isNoop(index, newArray) {
-        if (index > this.length) {
-            return false;
+        if (index >= this.length) {
+            return false
         }
         const item = this.#array[index];
         const newItem = newArray[index];
-        return this.#equalsFn(item, newItem);
-    }
-    originalIndexAt(index) {
-        return this.#originalIndices[index];
+        return this.#equalsFn(item, newItem)
     }
     noopItem(index) {
         return {
             op: ArrayDiffOperators.noop,
-            originalIndex: this.originalIndexAt(index),
             index,
+            originalIndex: this.originalIndexAt(index),
             item: this.#array[index],
         }
     }
     isAddition(item, fromIdx) {
-        return this.findIndexFrom(item, fromIdx) === -1;
-    }
-    findIndexFrom(item, fromIdx) {
-        for (let i = fromIdx; i < this.length; i++) {
-            if (this.#equalsFn(this.#array[i], item)) {
-                return i;
-            }
-        }
-        return -1;
+        return this.findIndexFrom(item, fromIdx) === -1
     }
     addItem(item, index) {
         const operation = {
@@ -97,7 +134,7 @@ class ArrayWithOriginalIndices {
         };
         this.#array.splice(index, 0, item);
         this.#originalIndices.splice(index, 0, -1);
-        return operation;
+        return operation
     }
     moveItem(item, toIndex) {
         const fromIndex = this.findIndexFrom(item, toIndex);
@@ -112,42 +149,15 @@ class ArrayWithOriginalIndices {
         this.#array.splice(toIndex, 0, _item);
         const [originalIndex] = this.#originalIndices.splice(fromIndex, 1);
         this.#originalIndices.splice(toIndex, 0, originalIndex);
-        return operation;
+        return operation
     }
     removeItemsAfter(index) {
         const operations = [];
         while (this.length > index) {
             operations.push(this.removeItem(index));
         }
-        return operations;
+        return operations
     }
-}
-function arraysDiffSequence(
-    oldArray,
-    newArray,
-    equalsFn = (a, b) => a === b
-) {
-    const sequence = [];
-    const array = new ArrayWithOriginalIndices(oldArray, equalsFn);
-    for (let index = 0; index < newArray.length; index++) {
-        if (array.isRemoval(index, newArray)) {
-            sequence.push(array.removeItem(index));
-            index--;
-            continue;
-        }
-        if (array.isNoop(index, newArray)) {
-            sequence.push(array.noopItem(index));
-            continue;
-        }
-        const item = newArray[index];
-        if (array.isAddition(item, index)) {
-            sequence.push(array.addItem(item, index));
-            continue;
-        }
-        sequence.push(array.moveItem(item, index));
-    }
-    sequence.push(...array.removeItemsAfter(newArray.length));
-    return sequence;
 }
 
 class DOMTypes {
@@ -172,8 +182,8 @@ function hFragment(vNodes) {
     }
 }
 function extractChildren(vdom) {
-    if (!vdom.children) {
-        return [];
+    if (vdom.children == null) {
+        return []
     }
     const children = [];
     for (const child of vdom.children) {
@@ -183,7 +193,7 @@ function extractChildren(vdom) {
             children.push(child);
         }
     }
-    return children;
+    return children
 }
 
 const removeTextNode = (vNode) => {
@@ -335,41 +345,51 @@ function mountDOM(vNode, parent, index = null) {
             throw new Error(`Unrecognized vNode type: ${vNode.type}`);
     }
 }
-const createTextNode = (vdom, parentEl, index) => {
+function createTextNode(vdom, parentEl, index) {
     const {value} = vdom;
     const textNode = document.createTextNode(value);
     vdom.el = textNode;
     insert(textNode, parentEl, index);
-};
-const addProps = (el, props, vdom) => {
+}
+function addProps(el, props, vdom) {
     const {on: events, ...attrs} = props;
     vdom.listeners = addEventListeners(events, el);
     setAttributes(el, attrs);
-};
-const createElementNode = (vdom, parentEl, index) => {
+}
+function createElementNode(vdom, parentEl, index) {
     const {tag, props, children} = vdom;
     const element = document.createElement(tag);
     addProps(element, props, vdom);
     vdom.el = element;
-    children.forEach(child => mountDOM(child, element));
+    children.forEach((child) => mountDOM(child, element));
     insert(element, parentEl, index);
-};
-const createFragmentNodes = (vdom, parentEl, index) => {
+}
+function createFragmentNodes(vdom, parentEl, index) {
     const {children} = vdom;
     vdom.el = parentEl;
-    children.forEach((child, i) =>
-        mountDOM(child, parentEl, index ? index + i : null)
-    );
-};
+    for (const child of children) {
+        mountDOM(child, parentEl, index);
+        if (index == null) {
+            continue
+        }
+        switch (child.type) {
+            case DOMTypes.FRAGMENT:
+                index += child.children.length;
+                break
+            default:
+                index++;
+        }
+    }
+}
 function insert(el, parentEl, index) {
-    if (index < 0) {
-        throw new Error('Index is less than 0')
-    }
-    if (!!index) {
+    if (index == null) {
         parentEl.append(el);
-        return;
+        return
     }
-    const children = parentEl.children;
+    if (index < 0) {
+        throw new Error(`Index must be a positive integer, got ${index}`)
+    }
+    const children = parentEl.childNodes;
     if (index >= children.length) {
         parentEl.append(el);
     } else {
@@ -377,27 +397,35 @@ function insert(el, parentEl, index) {
     }
 }
 
-function areNodesEqual(nodeA, nodeB) {
-    if (nodeA.type !== nodeB.type) {
-        return false;
+function areNodesEqual(nodeOne, nodeTwo) {
+    if (nodeOne.type !== nodeTwo.type) {
+        return false
     }
-    if (nodeA.type === DOMTypes.ELEMENT) {
-        const {tag: tagA} = nodeA;
-        const {tag: tagB} = nodeB;
-        return tagA === tagB;
+    if (nodeOne.type === DOMTypes.ELEMENT) {
+        const {
+            tag: tagOne,
+            props: {key: keyOne},
+        } = nodeOne;
+        const {
+            tag: tagTwo,
+            props: {key: keyTwo},
+        } = nodeTwo;
+        return tagOne === tagTwo && keyOne === keyTwo
     }
     return true;
 }
 
-const objectsDiff = (a, b) => {
-    const oldKeys = Object.keys(a);
-    const newKeys = Object.keys(b);
+function objectsDiff(oldObj, newObj) {
+    const oldKeys = Object.keys(oldObj);
+    const newKeys = Object.keys(newObj);
     return {
-        added: newKeys.filter((key) => !oldKeys.includes(key)),
-        removed: oldKeys.filter((key) => !newKeys.includes(key)),
-        updated: oldKeys.filter((key) => newKeys.includes(key) && a[key] !== b[key]),
+        added: newKeys.filter((key) => !(key in oldObj)),
+        removed: oldKeys.filter((key) => !(key in newObj)),
+        updated: newKeys.filter(
+            (key) => key in oldObj && oldObj[key] !== newObj[key]
+        ),
     }
-};
+}
 
 function isNotEmptyString(str) {
     return str !== ''
@@ -428,37 +456,41 @@ function patchDOM(oldDom, newDom, parentEl) {
 function findIndexInParent(parentEl, el) {
     const index = Array.from(parentEl.childNodes).indexOf(el);
     if (index < 0) {
-        return null;
+        return null
     }
-    return index;
+    return index
 }
-function patchText(oldDom, newDom) {
-    const {el} = oldDom;
-    const {value: oldText} = oldDom;
-    const {value: newText} = newDom;
+function patchText(oldVdom, newVdom) {
+    const el = oldVdom.el;
+    const {value: oldText} = oldVdom;
+    const {value: newText} = newVdom;
     if (oldText !== newText) {
         el.nodeValue = newText;
     }
 }
-function patchElement(oldDom, newDom) {
-    const {el} = oldDom;
+function patchElement(oldVdom, newVdom, hostComponent) {
+    const el = oldVdom.el;
     const {
         class: oldClass,
         style: oldStyle,
         on: oldEvents,
         ...oldAttrs
-    } = oldDom.props;
+    } = oldVdom.props;
     const {
         class: newClass,
         style: newStyle,
         on: newEvents,
         ...newAttrs
-    } = newDom.props;
-    const {listeners: oldListeners} = oldDom;
+    } = newVdom.props;
+    const {listeners: oldListeners} = oldVdom;
     patchAttrs(el, oldAttrs, newAttrs);
     patchClasses(el, oldClass, newClass);
     patchStyles(el, oldStyle, newStyle);
-    newDom.listeners = patchEvents(el, oldListeners, oldEvents, newEvents);
+    newVdom.listeners = patchEvents(
+        el,
+        oldListeners,
+        oldEvents,
+        newEvents);
 }
 function patchAttrs(el, oldAttrs, newAttrs) {
     const {added, removed, updated} = objectsDiff(oldAttrs, newAttrs);
@@ -466,17 +498,17 @@ function patchAttrs(el, oldAttrs, newAttrs) {
         removeAttribute(el, attr);
     }
     for (const attr of added.concat(updated)) {
-        el.setAttribute(attr, newAttrs[attr]);
+        setAttribute(el, attr, newAttrs[attr]);
     }
 }
 function patchClasses(el, oldClass, newClass) {
     const oldClasses = toClassList(oldClass);
     const newClasses = toClassList(newClass);
-    const {added, removed} = objectsDiff(oldClasses, newClasses);
-    if (!!removed.length) {
+    const {added, removed} = arraysDiff(oldClasses, newClasses);
+    if (removed.length > 0) {
         el.classList.remove(...removed);
     }
-    if (!!added.length) {
+    if (added.length > 0) {
         el.classList.add(...added);
     }
 }
@@ -511,21 +543,18 @@ function patchEvents(
     }
     return addedListeners
 }
-function patchChildren( oldDom, newDom)
-{
-    const oldChildren = extractChildren(oldDom);
-    const newChildren = extractChildren(newDom);
-    const parentEl = oldDom.el;
+function patchChildren(oldVdom, newVdom) {
+    const oldChildren = extractChildren(oldVdom);
+    const newChildren = extractChildren(newVdom);
+    const parentEl = oldVdom.el;
     const diffSeq = arraysDiffSequence(
         oldChildren,
         newChildren,
         areNodesEqual
     );
-    for ( const operation of diffSeq )
-    {
-        const { originalIndex, index, item } = operation;
-        switch (operation.op)
-        {
+    for (const operation of diffSeq) {
+        const {originalIndex, index, item} = operation;
+        switch (operation.op) {
             case ArrayDiffOperators.add:
                 mountDOM(item, parentEl, index);
                 break;
@@ -541,7 +570,11 @@ function patchChildren( oldDom, newDom)
                 patchDOM(oldChild, newChild, parentEl);
                 break;
             case ArrayDiffOperators.noop:
-                patchDOM(oldChildren[originalIndex], newChildren[index], parentEl);
+                patchDOM(
+                    oldChildren[originalIndex],
+                    newChildren[index],
+                    parentEl,
+                );
                 break;
         }
     }
@@ -564,10 +597,9 @@ function createApp({state, view, reducers = {}}) {
         subscriptions.push(subs);
     }
     function renderApp() {
-        const newVDOM = view(state, emit);
-        vdom = patchDOM(vdom, newVDOM, parentEl);
+        const newVdom = view(state, emit);
+        vdom = patchDOM(vdom, newVdom, parentEl);
     }
-
     return {
         mount(_parentEl) {
             if (isMounted) {
@@ -591,4 +623,4 @@ function createApp({state, view, reducers = {}}) {
     }
 }
 
-export { createApp, h, hFragment, hString };
+export { DOMTypes, createApp, h, hFragment, hString };
