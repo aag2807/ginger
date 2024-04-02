@@ -1,6 +1,6 @@
 import {describe, expect, test} from 'vitest'
 import {objectsDiff} from '../utils/objects'
-import {applyArraysDiffSequence, arraysDiffSequence} from "../utils/arrays";
+import {arraysDiffSequence} from "../utils/arrays";
 
 describe('object differ', () => {
     test('same object, no change', () => {
